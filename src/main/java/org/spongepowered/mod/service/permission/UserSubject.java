@@ -22,113 +22,118 @@
  * OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN
  * THE SOFTWARE.
  */
-package org.spongepowered.mod.mixin.core.command;
+package org.spongepowered.mod.service.permission;
 
 import com.google.common.base.Optional;
-import net.minecraft.command.ICommandSender;
+import com.mojang.authlib.GameProfile;
+import net.minecraft.server.MinecraftServer;
+import net.minecraft.server.management.UserListOpsEntry;
+import org.spongepowered.api.service.permission.MemorySubjectData;
 import org.spongepowered.api.service.permission.Subject;
 import org.spongepowered.api.service.permission.SubjectCollection;
 import org.spongepowered.api.service.permission.SubjectData;
 import org.spongepowered.api.service.permission.context.Context;
-import org.spongepowered.api.text.Text;
 import org.spongepowered.api.util.Tristate;
-import org.spongepowered.api.util.annotation.NonnullByDefault;
 import org.spongepowered.api.util.command.CommandSource;
-import org.spongepowered.asm.mixin.Mixin;
-import org.spongepowered.asm.mixin.Shadow;
-import org.spongepowered.mod.text.SpongeText;
 
 import java.util.List;
 import java.util.Set;
 
-@Mixin(targets = "net/minecraft/command/CommandExecuteAt$1")
-@NonnullByDefault
-public abstract class MixinCommandExecuteAtSender implements CommandSource, ICommandSender {
-    @Shadow
-    private ICommandSender field_174802_b;
+/**
+ * An implementation of vanilla minecraft's 4 op groups
+ */
+public class UserSubject implements Subject {
+    private final GameProfile player;
+    private final MemorySubjectData data;
+    private final UserCollection collection;
 
-    @Override
-    public void sendMessage(Text... messages) {
-        for (Text message : messages) {
-            addChatMessage(((SpongeText) message).toComponent());
-        }
-    }
-
-    @Override
-    public void sendMessage(Iterable<Text> messages) {
-        for (Text message : messages) {
-            addChatMessage(((SpongeText) message).toComponent());
-        }
-    }
-
-    @Override
-    public String getName() {
-        return ((CommandSource) field_174802_b).getIdentifier();
+    public UserSubject(GameProfile player, UserCollection users) {
+        this.player = player;
+        this.data = new MemorySubjectData(users.getService());
+        this.collection = users;
     }
 
     @Override
     public String getIdentifier() {
-        return ((CommandSource) field_174802_b).getIdentifier();
+        return player.getId().toString();
     }
 
     @Override
     public Optional<CommandSource> getCommandSource() {
-        return ((CommandSource) field_174802_b).getCommandSource();
+        return Optional.fromNullable((CommandSource) MinecraftServer.getServer().getConfigurationManager().getPlayerByUUID(player.getId()));
+    }
+
+    int getOpLevel() {
+        // Query op level from server ops list based on player's game profile
+        return ((UserListOpsEntry) MinecraftServer.getServer().getConfigurationManager().getOppedPlayers().getEntry(player)).getPermissionLevel();
     }
 
     @Override
     public SubjectCollection getContainingCollection() {
-        return ((CommandSource) field_174802_b).getContainingCollection();
+        return collection;
     }
 
     @Override
     public SubjectData getData() {
-        return ((CommandSource) field_174802_b).getData();
+        return data;
     }
 
     @Override
     public SubjectData getTransientData() {
-        return ((CommandSource) field_174802_b).getTransientData();
+        return getData();
     }
 
     @Override
     public boolean hasPermission(Set<Context> contexts, String permission) {
-        return ((CommandSource) field_174802_b).hasPermission(contexts, permission);
+        return getPermissionValue(contexts, permission) == Tristate.TRUE;
     }
+
 
     @Override
     public boolean hasPermission(String permission) {
-        return ((CommandSource) field_174802_b).hasPermission(permission);
+        return hasPermission(getActiveContexts(), permission);
     }
 
     @Override
     public Tristate getPermissionValue(Set<Context> contexts, String permission) {
-        return ((CommandSource) field_174802_b).getPermissionValue(contexts, permission);
+        Boolean res = getData().getPermissions(contexts).get(permission);
+        if (res == null) {
+            res = getData().getPermissions(SubjectData.GLOBAL_CONTEXT).get(permission);
+        }
+        if (res == null) {
+            for (Subject parent : getData().getParents(contexts)) {
+                Tristate tempRes = parent.getPermissionValue(contexts, permission);
+                if (tempRes != Tristate.UNDEFINED) {
+                    res = tempRes.asBoolean();
+                    break;
+                }
+            }
+        }
+        return res == null ? Tristate.UNDEFINED : Tristate.fromBoolean(res);
     }
 
     @Override
     public boolean isChildOf(Subject parent) {
-        return ((CommandSource) field_174802_b).isChildOf(parent);
+        return isChildOf(getActiveContexts(), parent);
     }
 
     @Override
     public boolean isChildOf(Set<Context> contexts, Subject parent) {
-        return ((CommandSource) field_174802_b).isChildOf(contexts, parent);
+        return getData().getParents(contexts).contains(parent);
     }
 
     @Override
     public List<Subject> getParents() {
-        return ((CommandSource) field_174802_b).getParents();
+        return getParents(getActiveContexts());
     }
 
     @Override
     public List<Subject> getParents(Set<Context> contexts) {
-        return ((CommandSource) field_174802_b).getParents(contexts);
+        return getData().getParents(contexts);
     }
 
     @Override
     public Set<Context> getActiveContexts() {
-        return ((CommandSource) field_174802_b).getActiveContexts();
+        throw new UnsupportedOperationException("Not implemented yet.");
     }
-
 }

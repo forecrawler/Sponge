@@ -24,6 +24,7 @@
  */
 package org.spongepowered.mod;
 
+import com.google.common.base.Predicate;
 import com.google.common.eventbus.EventBus;
 import com.google.common.eventbus.Subscribe;
 import com.google.inject.Guice;
@@ -55,6 +56,7 @@ import org.spongepowered.api.service.scheduler.SynchronousScheduler;
 import org.spongepowered.api.service.sql.SqlService;
 import org.spongepowered.api.service.persistence.SerializationService;
 import org.spongepowered.mod.command.CommandSponge;
+import org.spongepowered.api.service.permission.PermissionService;
 import org.spongepowered.mod.event.SpongeEventBus;
 import org.spongepowered.mod.event.SpongeEventHooks;
 import org.spongepowered.mod.guice.SpongeGuiceModule;
@@ -65,6 +67,8 @@ import org.spongepowered.mod.service.scheduler.SyncScheduler;
 import org.spongepowered.mod.service.sql.SqlServiceImpl;
 import org.spongepowered.mod.service.persistence.SpongeSerializationService;
 import org.spongepowered.mod.util.SpongeHooks;
+import org.spongepowered.mod.service.permission.OpPermissionService;
+import org.spongepowered.mod.service.permission.SpongeContextCalculator;
 
 import java.io.File;
 import java.io.IOException;
@@ -155,6 +159,14 @@ public class SpongeMod extends DummyModContainer implements PluginContainer {
     public void onPreInit(FMLPreInitializationEvent e) {
         MinecraftForge.EVENT_BUS.register(new SpongeEventHooks());
 
+        game.getServiceManager().potentiallyProvide(PermissionService.class).executeWhenPresent(new Predicate<PermissionService>() {
+            @Override
+            public boolean apply(PermissionService input) {
+                input.registerContextCalculator(new SpongeContextCalculator());
+                return true;
+            }
+        });
+
         // Add the SyncScheduler as a listener for ServerTickEvents
         FMLCommonHandler.instance().bus().register(this.getGame().getSyncScheduler());
 
@@ -167,6 +179,13 @@ public class SpongeMod extends DummyModContainer implements PluginContainer {
     @Subscribe
     public void onInitialization(FMLInitializationEvent e) {
         this.registry.init();
+        if (!game.getServiceManager().provide(PermissionService.class).isPresent()) {
+            try {
+                game.getServiceManager().setProvider(this, PermissionService.class, new OpPermissionService());
+            } catch (ProviderExistsException e1) {
+
+            }
+        }
     }
 
     @Subscribe
