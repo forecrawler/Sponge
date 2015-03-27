@@ -1,0 +1,20 @@
+apply plugin: 'application'
+
+mainClassName = 'org.spongepowered.granite.launch.server.VanillaServerMain'
+
+minecraft {
+    serverTweaker = 'org.spongepowered.granite.launch.server.VanillaServerTweaker'
+}
+
+// Set classpath for Minecraft server and Launchwrapper
+jar {
+    manifest {
+        attributes(
+                'Class-Path': 'bin/minecraft_server.1.8.jar bin/launchwrapper-1.11.jar'
+        )
+    }
+}
+
+configure([distZip, distTar]) {
+    enabled = false
+}

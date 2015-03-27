@@ -1,0 +1,9 @@
+jar {
+    manifest {
+        attributes(
+                'FMLCorePlugin': 'org.spongepowered.mod.SpongeCoremod',
+                'TweakClass': 'org.spongepowered.asm.launch.MixinTweaker',
+                'TweakOrder': '10000'
+        )
+    }
+}
