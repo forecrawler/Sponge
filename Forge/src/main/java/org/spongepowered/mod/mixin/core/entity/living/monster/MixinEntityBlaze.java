@@ -40,7 +40,7 @@ import org.spongepowered.asm.mixin.Shadow;
 public abstract class MixinEntityBlaze extends EntityMob {
 
     @Shadow
-    public abstract void func_70844_e(boolean onFire); // setOnFire
+    public abstract void setOnFire(boolean onFire);
 
     @Override
     @Shadow
@@ -55,6 +55,6 @@ public abstract class MixinEntityBlaze extends EntityMob {
     }
 
     public void blaze$setOnFire(boolean onFire) {
-        this.func_70844_e(onFire);
+        setOnFire(onFire);
     }
 }
