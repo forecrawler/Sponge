@@ -24,26 +24,26 @@
  */
 package org.spongepowered.granite.launch;
 
+import static com.google.common.base.Preconditions.checkNotNull;
 import static com.google.common.base.Preconditions.checkState;
-import static java.util.Objects.requireNonNull;
 
-import java.nio.file.Path;
+import java.io.File;
 
 import javax.annotation.Nullable;
 
 public final class GraniteLaunch {
 
-    @Nullable private static Path gameDir;
+    @Nullable private static File gameDir;
 
     private GraniteLaunch() {
     }
 
-    public static void initialize(Path gameDir) {
-        GraniteLaunch.gameDir = requireNonNull(gameDir, "gameDir");
+    public static void initialize(File gameDir) {
+        GraniteLaunch.gameDir = checkNotNull(gameDir, "gameDir");
         // TODO: Options
     }
 
-    public static Path getGameDirectory() {
+    public static File getGameDirectory() {
         checkState(gameDir != null, "Granite was not initialized");
         return gameDir;
     }

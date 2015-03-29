@@ -24,6 +24,9 @@
  */
 package org.spongepowered.granite.mixin.entity.player;
 
+import static com.google.common.base.Preconditions.checkArgument;
+import static com.google.common.base.Preconditions.checkNotNull;
+
 import com.flowpowered.math.vector.Vector3d;
 import com.google.common.base.Optional;
 import net.minecraft.entity.player.EntityPlayer;
@@ -65,9 +68,6 @@ import java.util.Collections;
 import java.util.List;
 import java.util.Locale;
 import java.util.Set;
-
-import static com.google.common.base.Preconditions.checkArgument;
-import static com.google.common.base.Preconditions.checkNotNull;
 
 @Mixin(EntityPlayerMP.class)
 @Implements(@Interface(iface = Player.class, prefix = "playermp$"))

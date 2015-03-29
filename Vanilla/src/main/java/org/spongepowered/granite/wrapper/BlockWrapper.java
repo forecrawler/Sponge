@@ -30,6 +30,7 @@ import net.minecraft.init.Blocks;
 import net.minecraft.util.BlockPos;
 import net.minecraft.util.EnumFacing;
 import net.minecraft.world.EnumSkyBlock;
+import org.apache.commons.lang3.NotImplementedException;
 import org.spongepowered.api.block.BlockLoc;
 import org.spongepowered.api.block.BlockSnapshot;
 import org.spongepowered.api.block.BlockState;
@@ -128,6 +129,11 @@ public class BlockWrapper implements BlockLoc {
     }
 
     @Override
+    public void remove() {
+        throw new NotImplementedException("TODO");
+    }
+
+    @Override
     public void interact() {
         throw new UnsupportedOperationException();
     }
@@ -145,6 +151,11 @@ public class BlockWrapper implements BlockLoc {
     @Override
     public BlockState getState() {
         return (BlockState) this.handle.getBlockState(this.pos);
+    }
+
+    @Override
+    public boolean hasTileEntity() {
+        throw new NotImplementedException("TODO");
     }
 
     @Override

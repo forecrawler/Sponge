@@ -30,8 +30,6 @@ import com.google.inject.Injector;
 import org.apache.logging.log4j.LogManager;
 import org.apache.logging.log4j.Logger;
 import org.spongepowered.api.Game;
-import org.spongepowered.api.event.block.BlockBreakEvent;
-import org.spongepowered.api.event.block.BlockChangeEvent;
 import org.spongepowered.api.event.state.ConstructionEvent;
 import org.spongepowered.api.event.state.InitializationEvent;
 import org.spongepowered.api.event.state.LoadCompleteEvent;
@@ -42,14 +40,12 @@ import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.service.ProviderExistsException;
 import org.spongepowered.api.service.command.CommandService;
 import org.spongepowered.api.service.command.SimpleCommandService;
-import org.spongepowered.api.util.event.Subscribe;
 import org.spongepowered.granite.event.GraniteEventFactory;
 import org.spongepowered.granite.guice.GraniteGuiceModule;
 import org.spongepowered.granite.launch.GraniteLaunch;
 
+import java.io.File;
 import java.io.IOException;
-import java.nio.file.Files;
-import java.nio.file.Path;
 
 public final class Granite implements PluginContainer {
 
@@ -57,15 +53,15 @@ public final class Granite implements PluginContainer {
 
     private static final Injector injector = Guice.createInjector(new GraniteGuiceModule());
     private final Logger logger = LogManager.getLogger();
-    private final Path gameDir;
-    private final Path pluginsDir;
-    private final Path configDir;
+    private final File gameDir;
+    private final File pluginsDir;
+    private final File configDir;
     private GraniteGame game;
 
     private Granite() {
         this.gameDir = GraniteLaunch.getGameDirectory();
-        this.pluginsDir = this.gameDir.resolve("plugins");
-        this.configDir = this.gameDir.resolve("config");
+        this.pluginsDir = new File(this.gameDir, "plugins");
+        this.configDir = new File(this.gameDir, "config");
     }
 
     public static Injector getInjector() {
@@ -80,15 +76,15 @@ public final class Granite implements PluginContainer {
         return this.logger;
     }
 
-    public Path getGameDirectory() {
+    public File getGameDirectory() {
         return this.gameDir;
     }
 
-    public Path getPluginsDirectory() {
+    public File getPluginsDirectory() {
         return this.pluginsDir;
     }
 
-    public Path getConfigDirectory() {
+    public File getConfigDirectory() {
         return this.configDir;
     }
 
@@ -106,8 +102,10 @@ public final class Granite implements PluginContainer {
                 this.logger.warn("An unknown CommandService was already registered", e);
             }
 
-            if (Files.notExists(this.gameDir) || Files.notExists(this.pluginsDir)) {
-                Files.createDirectories(this.pluginsDir);
+            if (!this.gameDir.isDirectory() || !this.pluginsDir.isDirectory()) {
+                if (!this.pluginsDir.mkdirs()) {
+                    throw new IOException("Failed to create plugins folder");
+                }
             }
 
             getLogger().info("Loading plugins...");

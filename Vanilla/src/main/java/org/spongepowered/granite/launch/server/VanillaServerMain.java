@@ -24,17 +24,19 @@
  */
 package org.spongepowered.granite.launch.server;
 
+import com.google.common.io.Closer;
+import com.google.common.io.Files;
 import net.minecraft.launchwrapper.Launch;
 
+import java.io.File;
+import java.io.FileOutputStream;
+import java.io.IOException;
+import java.io.InputStream;
 import java.net.URL;
 import java.net.URLConnection;
 import java.nio.channels.Channels;
 import java.nio.channels.FileChannel;
 import java.nio.channels.ReadableByteChannel;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.nio.file.Paths;
-import java.nio.file.StandardOpenOption;
 import java.security.DigestInputStream;
 import java.security.MessageDigest;
 
@@ -72,33 +74,32 @@ public final class VanillaServerMain {
     }
 
     private static boolean checkMinecraft() throws Exception {
-        Path bin = Paths.get("bin");
-        if (Files.notExists(bin)) {
-            Files.createDirectories(bin);
-        }
+        File bin = new File("bin");
 
         // First check if Minecraft is already downloaded :D
-        Path path = bin.resolve(MINECRAFT_SERVER_LOCAL);
+        File file = new File(bin, MINECRAFT_SERVER_LOCAL);
+        Files.createParentDirs(file);
+
         // Download the server first
-        if (Files.notExists(path) && !downloadVerified(MINECRAFT_SERVER_REMOTE, path)) {
+        if (!file.isFile() && !downloadVerified(MINECRAFT_SERVER_REMOTE, file)) {
             return false;
         }
 
-        path = bin.resolve(LAUNCHWRAPPER_LOCAL);
-        if (Files.notExists(path) && !downloadVerified(LAUNCHWRAPPER_REMOTE, path)) {
+        file = new File(bin, LAUNCHWRAPPER_LOCAL);
+        if (!file.isFile() && !downloadVerified(LAUNCHWRAPPER_REMOTE, file)) {
             return false;
         }
 
-        path = bin.resolve(DEOBF_SRG_LOCAL);
-        return Files.exists(path) || downloadVerified(DEOBF_SRG_REMOTE, path, DEOBF_SRG_HASH);
+        file = new File(bin, DEOBF_SRG_LOCAL);
+        return file.isFile() || downloadVerified(DEOBF_SRG_REMOTE, file, DEOBF_SRG_HASH);
     }
 
-    private static boolean downloadVerified(String remote, Path path) throws Exception {
-        return downloadVerified(remote, path, null);
+    private static boolean downloadVerified(String remote, File file) throws Exception {
+        return downloadVerified(remote, file, null);
     }
 
-    private static boolean downloadVerified(String remote, Path path, String expected) throws Exception {
-        String name = path.getFileName().toString();
+    private static boolean downloadVerified(String remote, File file, String expected) throws Exception {
+        String name = file.getName();
         boolean gzip = name.endsWith(".gz");
         URL url = new URL(remote);
 
@@ -111,9 +112,18 @@ public final class VanillaServerMain {
 
         MessageDigest md5 = MessageDigest.getInstance("MD5");
 
-        try (ReadableByteChannel source = Channels.newChannel(new DigestInputStream(con.getInputStream(), md5));
-                FileChannel out = FileChannel.open(path, StandardOpenOption.CREATE_NEW, StandardOpenOption.WRITE)) {
-            out.transferFrom(source, 0, Long.MAX_VALUE);
+        Closer closer = Closer.create();
+        try {
+            InputStream in = closer.register(con.getInputStream());
+            ReadableByteChannel source = closer.register(Channels.newChannel(new DigestInputStream(in, md5)));
+            FileOutputStream out = closer.register(new FileOutputStream(file));
+            FileChannel target = out.getChannel();
+
+            target.transferFrom(source, 0, Long.MAX_VALUE);
+        } catch (Throwable e) {
+            throw closer.rethrow(e);
+        } finally {
+            closer.close();
         }
 
         if (expected == null) {
@@ -124,7 +134,10 @@ public final class VanillaServerMain {
             if (hash.equals(expected)) {
                 System.out.println("Successfully downloaded " + name + " and verified checksum!");
             } else {
-                Files.delete(path);
+                if (!file.delete()) {
+                    throw new IOException("Failed to delete " + file);
+                }
+
                 System.err.println("Failed to download " + name + " (failed checksum verification).");
                 System.err.println("Please try again later.");
                 return false;

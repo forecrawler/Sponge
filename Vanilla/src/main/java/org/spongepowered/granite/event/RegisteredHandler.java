@@ -24,7 +24,7 @@
  */
 package org.spongepowered.granite.event;
 
-import static java.util.Objects.requireNonNull;
+import static com.google.common.base.Preconditions.checkNotNull;
 
 import org.spongepowered.api.plugin.PluginContainer;
 import org.spongepowered.api.util.event.Cancellable;
@@ -49,11 +49,11 @@ class RegisteredHandler implements EventHandler, Comparable<RegisteredHandler> {
 
     RegisteredHandler(PluginContainer plugin, Class<? extends Event> eventClass, Order order, EventHandler handler, Method handle,
             boolean ignoreCancelled) {
-        this.plugin = requireNonNull(plugin, "plugin");
-        this.eventClass = requireNonNull(eventClass, "eventClass");
-        this.order = requireNonNull(order, "order");
-        this.handle = requireNonNull(handle, "handle");
-        this.handler = requireNonNull(handler, "handler");
+        this.plugin = checkNotNull(plugin, "plugin");
+        this.eventClass = checkNotNull(eventClass, "eventClass");
+        this.order = checkNotNull(order, "order");
+        this.handle = checkNotNull(handle, "handle");
+        this.handler = checkNotNull(handler, "handler");
         this.ignoreCancelled = ignoreCancelled;
     }
 

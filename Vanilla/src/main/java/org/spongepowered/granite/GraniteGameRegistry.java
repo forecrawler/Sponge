@@ -37,9 +37,10 @@ import org.spongepowered.api.attribute.AttributeCalculator;
 import org.spongepowered.api.attribute.AttributeModifierBuilder;
 import org.spongepowered.api.attribute.Operation;
 import org.spongepowered.api.block.BlockType;
-import org.spongepowered.api.block.meta.BannerPatternShape;
-import org.spongepowered.api.block.meta.NotePitch;
-import org.spongepowered.api.block.meta.SkullType;
+import org.spongepowered.api.block.tile.TileEntityType;
+import org.spongepowered.api.block.tile.data.BannerPatternShape;
+import org.spongepowered.api.block.tile.data.NotePitch;
+import org.spongepowered.api.block.tile.data.SkullType;
 import org.spongepowered.api.effect.particle.ParticleEffectBuilder;
 import org.spongepowered.api.effect.particle.ParticleType;
 import org.spongepowered.api.effect.sound.SoundType;
@@ -121,6 +122,16 @@ public class GraniteGameRegistry implements GameRegistry {
 
     @Override
     public Collection<ItemType> getItems() {
+        throw new NotImplementedException("TODO");
+    }
+
+    @Override
+    public Optional<TileEntityType> getTileEntityType(String id) {
+        throw new NotImplementedException("TODO");
+    }
+
+    @Override
+    public Collection<TileEntityType> getTileEntityTypes() {
         throw new NotImplementedException("TODO");
     }
 

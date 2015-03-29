@@ -24,7 +24,7 @@
  */
 package org.spongepowered.granite.event;
 
-import static java.util.Objects.requireNonNull;
+import static com.google.common.base.Preconditions.checkNotNull;
 import static org.objectweb.asm.Opcodes.ACC_FINAL;
 import static org.objectweb.asm.Opcodes.ACC_PRIVATE;
 import static org.objectweb.asm.Opcodes.ACC_PUBLIC;
@@ -39,6 +39,7 @@ import static org.objectweb.asm.Opcodes.PUTFIELD;
 import static org.objectweb.asm.Opcodes.RETURN;
 import static org.objectweb.asm.Opcodes.V1_8;
 
+import com.google.common.base.Objects;
 import com.google.common.cache.CacheBuilder;
 import com.google.common.cache.CacheLoader;
 import com.google.common.cache.LoadingCache;
@@ -49,7 +50,6 @@ import org.objectweb.asm.Type;
 import org.spongepowered.api.util.event.Event;
 
 import java.lang.reflect.Method;
-import java.util.Objects;
 import java.util.concurrent.atomic.AtomicInteger;
 
 import javax.annotation.Nullable;
@@ -74,7 +74,7 @@ class EventHandlerClassFactory implements EventHandlerFactory {
             });
 
     public EventHandlerClassFactory(String targetPackage) {
-        requireNonNull(targetPackage, "targetPackage");
+        checkNotNull(targetPackage, "targetPackage");
         if (!targetPackage.isEmpty()) {
             targetPackage += '.';
         }
@@ -158,8 +158,8 @@ class EventHandlerClassFactory implements EventHandlerFactory {
         private final Method method;
 
         private Handler(Class<?> type, Method method) {
-            this.type = requireNonNull(type, "type");
-            this.method = requireNonNull(method, "method");
+            this.type = checkNotNull(type, "type");
+            this.method = checkNotNull(method, "method");
         }
 
         @Override
@@ -179,7 +179,7 @@ class EventHandlerClassFactory implements EventHandlerFactory {
 
         @Override
         public int hashCode() {
-            return Objects.hash(this.type, this.method);
+            return Objects.hashCode(this.type, this.method);
         }
 
     }

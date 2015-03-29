@@ -24,12 +24,15 @@
  */
 package org.spongepowered.granite.launch.transformers;
 
+import com.google.common.base.Charsets;
 import com.google.common.base.Strings;
 import com.google.common.base.Throwables;
 import com.google.common.collect.ImmutableBiMap;
 import com.google.common.collect.ImmutableMap;
 import com.google.common.collect.ImmutableTable;
 import com.google.common.collect.Maps;
+import com.google.common.collect.Sets;
+import com.google.common.io.Closer;
 import net.minecraft.launchwrapper.IClassNameTransformer;
 import net.minecraft.launchwrapper.IClassTransformer;
 import net.minecraft.launchwrapper.Launch;
@@ -47,13 +50,11 @@ import org.objectweb.asm.tree.ClassNode;
 import org.objectweb.asm.tree.FieldNode;
 
 import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
 import java.io.IOException;
+import java.io.InputStream;
 import java.io.InputStreamReader;
-import java.nio.charset.StandardCharsets;
-import java.nio.file.Files;
-import java.nio.file.Path;
-import java.util.HashMap;
-import java.util.HashSet;
 import java.util.Map;
 import java.util.Set;
 import java.util.zip.GZIPInputStream;
@@ -67,22 +68,26 @@ public class DeobfuscationTransformer extends Remapper implements IClassTransfor
     private final Map<String, Map<String, String>> fields;
     private final Map<String, Map<String, String>> methods;
 
-    private final Set<String> failedFields = new HashSet<>();
-    private final Set<String> failedMethods = new HashSet<>();
+    private final Set<String> failedFields = Sets.newHashSet();
+    private final Set<String> failedMethods = Sets.newHashSet();
 
-    private final Map<String, Map<String, String>> fieldDescriptions = new HashMap<>();
+    private final Map<String, Map<String, String>> fieldDescriptions = Maps.newHashMap();
 
     public DeobfuscationTransformer() throws Exception {
-        Path path = (Path) Launch.blackboard.get("granite.deobf-srg");
-        String name = path.getFileName().toString();
+        File file = (File) Launch.blackboard.get("granite.deobf-srg");
+        String name = file.getName();
         boolean gzip = name.endsWith(".gz");
 
-        ImmutableBiMap.Builder<String, String> classes = ImmutableBiMap.builder();
-        ImmutableTable.Builder<String, String, String> fields = ImmutableTable.builder();
-        ImmutableTable.Builder<String, String, String> methods = ImmutableTable.builder();
+        final ImmutableBiMap.Builder<String, String> classes = ImmutableBiMap.builder();
+        final ImmutableTable.Builder<String, String, String> fields = ImmutableTable.builder();
+        final ImmutableTable.Builder<String, String, String> methods = ImmutableTable.builder();
 
-        try (BufferedReader reader = new BufferedReader(new InputStreamReader(
-                gzip ? new GZIPInputStream(Files.newInputStream(path)) : Files.newInputStream(path), StandardCharsets.UTF_8))) {
+        Closer closer = Closer.create();
+        try {
+            InputStream in = closer.register(new FileInputStream(file));
+            if (gzip) in = closer.register(new GZIPInputStream(in));
+            BufferedReader reader = closer.register(new BufferedReader(new InputStreamReader(in, Charsets.UTF_8)));
+
             String line;
             while ((line = reader.readLine()) != null) {
                 if ((line = line.trim()).isEmpty()) {
@@ -124,6 +129,10 @@ public class DeobfuscationTransformer extends Remapper implements IClassTransfor
                     default:
                 }
             }
+        } catch (Throwable e) {
+            closer.rethrow(e);
+        } finally {
+            closer.close();
         }
 
         this.classes = classes.build();
@@ -303,8 +312,8 @@ public class DeobfuscationTransformer extends Remapper implements IClassTransfor
             }
         }
 
-        Map<String, String> fields = new HashMap<>();
-        Map<String, String> methods = new HashMap<>();
+        Map<String, String> fields = Maps.newHashMap();
+        Map<String, String> methods = Maps.newHashMap();
 
         Map<String, String> m;
         for (String parent : parents) {
@@ -333,7 +342,7 @@ public class DeobfuscationTransformer extends Remapper implements IClassTransfor
 
         Map<String, String> newClassMap = this.fieldDescriptions.get(newType);
         if (newClassMap == null) {
-            newClassMap = new HashMap<>();
+            newClassMap = Maps.newHashMap();
             this.fieldDescriptions.put(newType, newClassMap);
         }
         newClassMap.put(newName, type);

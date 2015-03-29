@@ -97,9 +97,9 @@ configure(minecraftProjects) {
         mappings = 'snapshot_20150328'
     }
 
-    // Set Java version // TODO: Java 8?
-    sourceCompatibility = '1.8'
-    targetCompatibility = '1.8'
+    // Set Java version
+    sourceCompatibility = '1.6'
+    targetCompatibility = '1.6'
 
     // Testing dependencies
     dependencies {

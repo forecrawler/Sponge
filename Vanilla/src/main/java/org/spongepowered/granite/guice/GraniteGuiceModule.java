@@ -39,7 +39,6 @@ import org.spongepowered.granite.event.GraniteEventManager;
 import org.spongepowered.granite.plugin.GranitePluginManager;
 
 import java.io.File;
-import java.nio.file.Path;
 
 public class GraniteGuiceModule extends AbstractModule {
 
@@ -53,10 +52,7 @@ public class GraniteGuiceModule extends AbstractModule {
         bind(ServiceManager.class).to(SimpleServiceManager.class).in(Scopes.SINGLETON);
 
         ConfigDirAnnotation sharedRoot = new ConfigDirAnnotation(true);
-        Path configDir = Granite.instance.getConfigDirectory();
-
-        bind(Path.class).annotatedWith(sharedRoot).toInstance(configDir);
-        bind(File.class).annotatedWith(sharedRoot).toInstance(configDir.toFile());
+        bind(File.class).annotatedWith(sharedRoot).toInstance(Granite.instance.getConfigDirectory());
     }
 
 }

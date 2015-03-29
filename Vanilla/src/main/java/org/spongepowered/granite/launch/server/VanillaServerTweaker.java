@@ -35,7 +35,6 @@ import org.spongepowered.granite.launch.GraniteLaunch;
 
 import java.io.File;
 import java.io.IOException;
-import java.nio.file.Paths;
 import java.util.List;
 
 public final class VanillaServerTweaker implements ITweaker {
@@ -52,7 +51,7 @@ public final class VanillaServerTweaker implements ITweaker {
 
     @Override
     public void acceptOptions(List<String> args, File gameDir, File assetsDir, String profile) {
-        GraniteLaunch.initialize(gameDir != null ? gameDir.toPath() : Paths.get(""));
+        GraniteLaunch.initialize(gameDir != null ? gameDir : new File(""));
     }
 
     @Override
@@ -70,7 +69,7 @@ public final class VanillaServerTweaker implements ITweaker {
         // Check if we're running in deobfuscated environment already
         logger.info("Applying runtime deobfuscation...");
         if (isObfuscated()) {
-            Launch.blackboard.put("granite.deobf-srg", Paths.get("bin", "deobf.srg.gz"));
+            Launch.blackboard.put("granite.deobf-srg", new File("bin", "deobf.srg.gz"));
             loader.registerTransformer("org.spongepowered.granite.launch.transformers.DeobfuscationTransformer");
             logger.info("Runtime deobfuscation is applied.");
         } else {
